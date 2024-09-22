@@ -1,14 +1,35 @@
 import babel from '@babel/core';
-import presetEnv from '@babel/preset-env'; // preset-env 是 babel 的一个插件，它可以让我们使用最新的 JavaScript 特性，而不用担心浏览器兼容性问题。
 import fs from 'node:fs';
-import react from '@babel/preset-react';
-const code = fs.readFileSync('./app.jsx', 'utf8');
+const code = fs.readFileSync('./test.js', 'utf8');
+
+// types 包含了各种ast的方法
+const transformFunction = ({ types: t }) => {
+  return {
+    name: 'transform-function',
+    visitor: {
+      // 匹配
+      ArrowFunctionExpression(path) {
+        // 箭头函数转化为普通的function
+        const node = path.node;
+        // 转化为普通的function
+        // async params body
+        const arrowFunction = t.FunctionExpression(
+          null,
+          node.params,
+          t.blockStatement([t.returnStatement(node.body)]),
+          node.async
+        )
+        path.replaceWith(arrowFunction)
+      }
+    }
+  }
+}
+
 const result = babel.transform(code, {
-  presets: [
-    // entry 手动引入
-    // usage 按需引入
-    [presetEnv, { useBuiltIns: "usage", corejs: 3 }],
-    react
-  ],
+  plugins: [
+    transformFunction
+  ]
 })
+
+// 写一个 ()=>{} ===> function 插件
 console.log(result.code);
