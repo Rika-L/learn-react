@@ -21,7 +21,6 @@ const React = {
   }
 }
 
-const vdom = React.createElement('div', { id: 'root' }, React.createElement('h1', null, 'Hello World'),)
 
 // 完成虚拟dom转fiber结构和时间切片
 
@@ -67,6 +66,10 @@ function workLoop(deadline) {
     nextUnitOfWork = performUnitOfWork(nextUnitOfWork) // 执行工作单元
     shouldYield = deadline.timeRemaining() < 1 // 是否应该让出时间片
   }
+  // nextUnitOfWork为空，说明全部工作单元执行完毕 并且 wipRoot存在
+  if (!nextUnitOfWork && wipRoot) {
+    commitRoot() // 提交更新
+  }
   requestIdleCallback(workLoop) // 继续执行下一轮循环
 }
 
@@ -92,8 +95,89 @@ function performUnitOfWork(fiber) {
   return null
 }
 
+function createFiber(element, parent) {
+  return {
+    type: element.type,
+    props: element.props,
+    parent: parent,
+    child: null,
+    sibling: null,
+    dom: null,
+    alternate: null,
+    effectTag: 'PLACEMENT'
+  }
+}
 
 function reconcileChildren(fiber, elements) {
   // diff算法
   // 形成fiber树
+  let index = 0
+  let prevSibling = null
+  let oldFiber = fiber.alternate && fiber.alternate.child // 旧的fiber树
+  while (index < elements.length || oldFiber != null) {
+    const element = elements[index]
+    // 1复用
+    let newFiber = null
+    const sameType = oldFiber && element && element.type === oldFiber.type
+    if (sameType) {
+      newFiber = {
+        type: oldFiber.type,
+        props: element.props,
+        parent: fiber,
+        dom: oldFiber.dom,
+        alternate: oldFiber,
+        effectTag: 'UPDATE' // 更新
+      }
+    }
+    // 2新增
+    if (!sameType && element) {
+      newFiber = createFiber(element, fiber)
+      newFiber.effectTag = 'PLACEMENT' // 新增
+    }
+    // 3删除
+    if (oldFiber && !sameType) {
+      oldFiber.effectTag = 'DELETION' // 删除
+      deletions.push(oldFiber)
+    }
+
+    if (oldFiber) oldFiber = oldFiber.sibling
+
+    if (index === 0) {
+      fiber.child = newFiber
+    } else if (element) {
+      prevSibling.sibling = newFiber
+    }
+    prevSibling = newFiber
+    index++
+  }
 }
+
+function commitRoot() {
+  deletions.forEach(commitWork) // 删除
+  commitWork(wipRoot.child) // 新增和更新
+  currentRoot = wipRoot // 存储旧的fiber
+  wipRoot = null // 清空wipRoot
+}
+
+function commitWork(fiber) {
+  if (!fiber) return
+  const domParent = fiber.parent.dom
+  if (fiber.effectTag === 'PLACEMENT') {
+    domParent.appendChild(fiber.dom)
+  } else if (fiber.effectTag === 'UPDATE') {
+    updateDom(fiber.dom, fiber.alternate.props, fiber.props)
+  } else if (fiber.effectTag === 'DELETION') {
+    domParent.removeChild(fiber.dom)
+  }
+  commitWork(fiber.child)
+  commitWork(fiber.sibling)
+}
+
+const vdom = React.createElement('div', { id: 'root' }, React.createElement('h1', null, 'Hello World'),)
+
+render(vdom, document.getElementById('root'))
+
+setTimeout(() => {
+  const newVdom = React.createElement('div', { id: 'root' }, React.createElement('h1', null, 'Hello React'),)
+  render(newVdom, document.getElementById('root'))
+}, 3000)
