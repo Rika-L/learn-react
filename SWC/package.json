@@ -1,0 +1,9 @@
+{
+	"type": "module",
+	"scripts": {
+		"dev": "node index.js"
+	},
+	"devDependencies": {
+		"@swc/core": "^1.7.26"
+	}
+}
