@@ -28,6 +28,38 @@ const vdom = React.createElement('div', { id: 'root' }, React.createElement('h1'
 // requestIdleCallback
 
 let nextUnitOfWork = null // 下一个工作单元
+let wipRoot = null // 当前正在工作的根fiber
+let currentRoot = null // 当前的根fiber
+let deletions = null // 待删除的fiber
+
+function render(element, container) {
+  wipRoot = {
+    dom: container,
+    props: {
+      children: [element]
+    },
+    alternate: currentRoot // 保存旧的fiber
+  }
+  deletions = []
+  nextUnitOfWork = wipRoot
+}
+
+function createDom(fiber) {
+  const dom = fiber.type === 'TEXT_ELEMENT' ? document.createTextNode('') : document.createElement(fiber.type)
+  updateDom(dom, {}, fiber.props) // 更新dom属性
+  return dom
+}
+
+function updateDom(dom, preProps, nextProps) {
+  // 旧的属性清除
+  Object.keys(preProps).filter(name => name !== 'children').forEach(name => {
+    dom[name] = ''
+  })
+  // 新的属性增加
+  Object.keys(nextProps).filter(name => name !== 'children').forEach(name => {
+    dom[name] = nextProps[name]
+  })
+}
 
 function workLoop(deadline) {
   let shouldYield = false // 是否应该让出时间片
@@ -40,4 +72,28 @@ function workLoop(deadline) {
 
 requestIdleCallback(workLoop) // 开始执行循环
 
-function performUnitOfWork() { }
+function performUnitOfWork(fiber) {
+  if (!fiber.dom) {
+    fiber.dom = createDom(fiber) // 创建真实dom
+  }
+  // 遍历子节点
+  reconcileChildren(fiber, fiber.props.children)
+  if (fiber.child) {
+    return fiber.child
+  }
+  let nextFiber = fiber
+  while (nextFiber) {
+    if (nextFiber.sibling) {
+      return nextFiber.sibling
+    }
+    nextFiber = nextFiber.parent
+  }
+  // 完成工作单元
+  return null
+}
+
+
+function reconcileChildren(fiber, elements) {
+  // diff算法
+  // 形成fiber树
+}
