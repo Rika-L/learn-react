@@ -1,15 +1,13 @@
-// react 没有全局组件局部组件的概念
-
-import Test1 from '@/components/Test1'
-import Test2 from '@/components/Test2'
+import { useState } from 'react'
 
 function Home() {
-  return (
-    <>
-      <Test1></Test1>
-      <Test2></Test2>
-    </>
+  const [value, setValue] = useState('')
+  const onchange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setValue(e.target.value.toLocaleUpperCase())
+  }
 
+  return (
+    <input type="text" value={value} onChange={onchange} />
   )
 }
 
