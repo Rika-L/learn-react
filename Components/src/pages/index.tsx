@@ -1,13 +1,19 @@
+import RiModel from '@/components/RiModel'
 import { useState } from 'react'
 
 function Home() {
-  const [value, setValue] = useState('')
-  const onchange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValue(e.target.value.toLocaleUpperCase())
+  const [isShow, setIsShow] = useState(false)
+
+  const hdlClick = () => {
+    setIsShow(!isShow)
   }
 
   return (
-    <input type="text" value={value} onChange={onchange} />
+    <>
+      <button type="button" onClick={hdlClick}>展示对话框</button>
+      {isShow && <RiModel hdlClick={hdlClick} />}
+    </>
+
   )
 }
 
