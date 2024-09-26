@@ -1,7 +1,11 @@
-import HelloWorld from '@/components/HelloWord'
+import State from './use-state'
 
 function Home() {
-  return <div><HelloWorld /></div>
+  return (
+    <div>
+      <State />
+    </div>
+  )
 }
 
 export default Home
