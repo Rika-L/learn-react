@@ -1,4 +1,5 @@
 import Context from './use-context/use-context'
+import Effect from './use-effect'
 import Reducer from './use-reducer'
 import Ref from './use-ref'
 import State from './use-state'
@@ -10,6 +11,10 @@ function Home() {
       <Reducer />
       <Context />
       <Ref />
+      <br />
+      <div>---------------------------------------------------------------</div>
+      <br />
+      <Effect />
     </div>
   )
 }
